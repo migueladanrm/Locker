@@ -1,6 +1,8 @@
 ﻿using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using Locker.Models;
+using System;
 
 /// <summary>
 /// Herramienta de encriptación de archivos.
@@ -8,8 +10,21 @@ using System.Text;
 /// <remarks>
 /// Adaptado de: https://ourcodeworld.com/articles/read/471/how-to-encrypt-and-decrypt-files-using-the-aes-encryption-algorithm-in-c-sharp.
 /// </remarks>
-public static class FileEncryptionTool
+public class FileEncryptionTool
 {
+    public event Action<NotifyProgressEventArgs> ProgressChanged;
+
+    public FileEncryptionTool()
+    {
+
+    }
+
+    public FileEncryptionTool(Action<NotifyProgressEventArgs> progressChangedListener)
+    {
+        if (progressChangedListener != null)
+            ProgressChanged = progressChangedListener;
+    }
+
     /// <summary>
     /// Desencripta un archivo cifrado con el algoritmo AES a través de una clave secreta.
     /// </summary>
@@ -17,7 +32,7 @@ public static class FileEncryptionTool
     /// <param name="destination">Flujo de datos de destino (desencriptado).</param>
     /// <param name="password">Clave secreta.</param>
     /// <param name="disposeSource">Determina si se liberará el flujo de origen al finalizar.</param>
-    public static void DecryptFile(Stream source, Stream destination, string password, bool disposeSource = true)
+    public void DecryptFile(Stream source, Stream destination, string password, bool disposeSource = true)
     {
         var passwordBytes = Encoding.UTF8.GetBytes(password);
         var salt = new byte[32];
@@ -38,8 +53,9 @@ public static class FileEncryptionTool
             var buffer = new byte[1024 * 1024];
             int read;
 
-            while ((read = cs.Read(buffer, 0, buffer.Length)) > 0)
+            while ((read = cs.Read(buffer, 0, buffer.Length)) > 0) {
                 destination.Write(buffer, 0, read);
+            }
         }
 
         if (disposeSource)
@@ -53,7 +69,7 @@ public static class FileEncryptionTool
     /// <param name="destination">Flujo de datos de destino.</param>
     /// <param name="password">Clave secreta.</param>
     /// <param name="disposeSource">Determina si se liberará el flujo de origen al finalizar.</param>
-    public static void EncryptFile(Stream source, Stream destination, string password, bool disposeSource = true)
+    public void EncryptFile(Stream source, Stream destination, string password, bool disposeSource = true)
     {
         var salt = CryptoUtils.GenerateRandomSalt(32, 10);
         var passwordBytes = Encoding.UTF8.GetBytes(password);
@@ -73,8 +89,10 @@ public static class FileEncryptionTool
             var buffer = new byte[1024 * 1024];
             int read;
 
-            while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
+            while ((read = source.Read(buffer, 0, buffer.Length)) > 0) {
                 cs.Write(buffer, 0, read);
+                ProgressChanged?.Invoke(new NotifyProgressEventArgs(Mode.Encrypt,destination.Length, source.Length));
+            }
         }
 
         if (disposeSource)
