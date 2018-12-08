@@ -29,6 +29,7 @@ namespace Locker
                         WriteHelp();
                         break;
                     case ARG_FIRST_DECRYPT:
+                        ModeDecrypt(args);
                         break;
                     case ARG_FIRST_ENCRYPT:
                         ModeEncrypt(args);
@@ -53,12 +54,33 @@ namespace Locker
 
         }
 
+        static void ModeDecrypt(string[] args)
+        {
+            string sourceFile = args[1];
+            string destinationFile = args[2];
+
+            WriteLine("Se ha seleccionado el modo DESENCRIPTAR para el siguiente archivo:");
+            WriteFileOverview(sourceFile);
+            Write("Clave: ");
+
+            string key = RequestPassword();
+            WriteLine();
+
+            using (var source = new FileStream(sourceFile, FileMode.Open))
+                using(var destination=new FileStream(destinationFile, FileMode.Create)) {
+                var fet = new FileEncryptionTool(OnProgressUpdate);
+                fet.DecryptFile(source, destination, key);
+            }
+
+            WriteLine("\nSe ha completado el desencriptado del archivo.");
+        }
+
         private static void ModeEncrypt(string[] args)
         {
             string sourceFile = args[1];
             string destination = args[2];
 
-            WriteLine("Se ha seleccionado el modo cifrar para el siguiente archivo:");
+            WriteLine("Se ha seleccionado el modo ENCRIPTAR para el siguiente archivo:");
             WriteFileOverview(sourceFile);
             Write("Clave de cifrado: ");
 
@@ -104,6 +126,10 @@ namespace Locker
             return password;
         }
 
+        /// <summary>
+        /// Escribe una línea de texto de título adornado.
+        /// </summary>
+        /// <param name="str">Cadena de texto que corresponde al título.</param>
         static void WriteTitle(string str)
         {
             str = $"=====| {str} |";
@@ -113,10 +139,13 @@ namespace Locker
             WriteLine(str);
         }
 
+        /// <summary>
+        /// Escribe información general del archivo seleccionado.
+        /// </summary>
+        /// <param name="path">Ruta del archivo seleccionado.</param>
         static void WriteFileOverview(string path)
         {
             var fi = new FileInfo(path);
-
             WriteLine($"\n\tINFORMACIÓN DE ARCHIVO\n\tArchivo:\t{fi.Name}\n\tUbicación:\t{fi.Directory}\n\tTamaño:\t\t{fi.Length} bytes\n");
         }
     }

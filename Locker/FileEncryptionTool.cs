@@ -55,6 +55,7 @@ public class FileEncryptionTool
 
             while ((read = cs.Read(buffer, 0, buffer.Length)) > 0) {
                 destination.Write(buffer, 0, read);
+                ProgressChanged?.Invoke(new NotifyProgressEventArgs(Mode.Decrypt, destination.Length, source.Length));
             }
         }
 
