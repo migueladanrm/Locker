@@ -43,10 +43,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CryptoUtils.cs" />
-    <Compile Include="FileEncryptionTool.cs" />
-    <Compile Include="Models\Mode.cs" />
-    <Compile Include="Models\NotifyProgressEventArgs.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Console;
 using System.IO;
-using Locker.Models;
+using Locker.Crypto;
 
 namespace Locker
 {
@@ -44,12 +44,12 @@ namespace Locker
 
         private static void OnProgressUpdate(NotifyProgressEventArgs e)
         {
-            if (e.Total < e.Current)
-                e.Current = e.Total;
+            if (e.Total < e.CurrentProgress)
+                e.CurrentProgress = e.Total;
 
-            Write($"\r{(e.Mode == Mode.Decrypt ? "Desencriptando" : "Encriptando")} archivo: {Math.Round((100.0 / e.Total) * e.Current, 2)}% | {e.Current}/{e.Total} bytes  ");
+            Write($"\rProcesando archivo: {Math.Round((100.0 / e.Total) * e.CurrentProgress, 2)}% | {e.CurrentProgress}/{e.Total} bytes  ");
 
-            if (e.Current == e.Total)
+            if (e.CurrentProgress == e.Total)
                 WriteLine();
 
         }
@@ -66,11 +66,8 @@ namespace Locker
             string key = RequestPassword();
             WriteLine();
 
-            using (var source = new FileStream(sourceFile, FileMode.Open))
-                using(var destination=new FileStream(destinationFile, FileMode.Create)) {
-                var fet = new FileEncryptionTool(OnProgressUpdate);
-                fet.DecryptFile(source, destination, key);
-            }
+            var lockerFile = new LockerFile(new FileStream(sourceFile, FileMode.Open));
+            lockerFile.DecryptPayload(key, new FileStream(destinationFile, FileMode.Create), OnProgressUpdate);
 
             WriteLine("\nSe ha completado el desencriptado del archivo.");
         }
@@ -87,11 +84,7 @@ namespace Locker
             string password = RequestPassword();
             WriteLine();
 
-            using (var source = new FileStream(sourceFile, FileMode.Open))
-            using (var target = new FileStream(destination, FileMode.Create)) {
-                var fet = new FileEncryptionTool(OnProgressUpdate);
-                fet.EncryptFile(source, target, password);
-            }
+            LockerFileFactory.CreateLockerFile(sourceFile, new FileStream(destination, FileMode.Create), password, OnProgressUpdate);
 
             WriteLine("\nSe ha completado el cifrado del archivo.");
         }

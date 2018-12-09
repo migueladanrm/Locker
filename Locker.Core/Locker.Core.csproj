@@ -41,8 +41,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants.cs" />
+    <Compile Include="Crypto\CryptoUtils.cs" />
+    <Compile Include="Crypto\FileEncryptionTool.cs" />
+    <Compile Include="Crypto\HashUtils.cs" />
     <Compile Include="LockerFile.cs" />
+    <Compile Include="LockerFileFactory.cs" />
     <Compile Include="LockerFileMetadata.cs" />
+    <Compile Include="NotifyProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
