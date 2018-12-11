@@ -17,17 +17,15 @@ namespace Locker
         /// <param name="destination">Fichero de destino.</param>
         /// <param name="key">Clave de cifrado.</param>
         /// <param name="progressChangedListener">Observador de evento de cambio de progreso.</param>
-        public static void CreateLockerFile(string sourceFile, FileStream destination, string key, Action<ProgressChangedEventArgs> progressChangedListener = null)
+        public static void CreateLockerFile(FileInfo sourceFile, FileStream destination, string key, Action<ProgressChangedEventArgs> progressChangedListener = null)
         {
-            var fi = new FileInfo(sourceFile);
-
             if (destination == null)
-                destination = new FileStream($"{fi.Directory}\\{fi.Name.Replace(fi.Extension, Constants.LOCKER_FILE_EXT)}", FileMode.Create);
+                destination = new FileStream($"{sourceFile.Directory}\\{sourceFile.Name.Replace(sourceFile.Extension, Constants.LOCKER_FILE_EXT)}", FileMode.Create);
 
             WriteFileSignature(ref destination);
-            WriteMetadata(ref destination, CreateMetadata(fi, key));
+            WriteMetadata(ref destination, CreateMetadata(sourceFile, key));
 
-            using (var source = new FileStream(sourceFile, FileMode.Open))
+            using (var source = new FileStream(sourceFile.FullName, FileMode.Open))
             using (destination) {
                 var fet = new FileEncryptionTool(progressChangedListener);
                 fet.EncryptFile(source, destination, key);

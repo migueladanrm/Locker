@@ -18,7 +18,7 @@ namespace Locker
         /// <param name="source">Secuencia de archivo de origen.</param>
         public LockerFile(FileStream source)
         {
-            if (source.Length < Constants.LOCKER_FILE_HEADER_SIZE || !CheckFileSignature(source))
+            if (source.Length < Constants.LOCKER_FILE_HEADER_SIZE || !CheckFileSignature(source, false))
                 throw new LockerFileFormatException();
 
             var metadataBytes = new byte[Constants.LOCKER_FILE_METADATA_SIZE];
@@ -66,10 +66,10 @@ namespace Locker
         /// </summary>
         /// <param name="path">Ubicación del archivo.</param>
         /// <returns>Resultado de validación de firma del archivo.</returns>
-        public static bool CheckFileSignature(string path) => CheckFileSignature(new FileStream(path, FileMode.Open));
+        public static bool CheckFileSignature(string path, bool dispose) => CheckFileSignature(new FileStream(path, FileMode.Open), dispose);
 
         /// <summary>
-        /// Verifica la firma del archivo-
+        /// Verifica la firma del archivo.
         /// </summary>
         /// <param name="signature">Bytes de firma de archivo.</param>
         /// <returns>Resultado de validación de firma de archivo.</returns>
@@ -80,8 +80,7 @@ namespace Locker
 
             if (signature.Length < Constants.LOCKER_FILE_SIGNATURE_SIZE)
                 throw new ArgumentException();
-
-            return signature[0] == 0x4C && signature[1] == 0x4F && signature[2] == 0x43 && signature[3] == 0x4B && signature[4] == 0x45 && signature[5] == 0x69;
+            return signature[0] == 0x4C && signature[1] == 0x4F && signature[2] == 0x43 && signature[3] == 0x4B && signature[4] == 0x45 && signature[5] == 0x52;
         }
 
         /// <summary>
@@ -89,10 +88,13 @@ namespace Locker
         /// </summary>
         /// <param name="source">Secuencia de datos del archivo.</param>
         /// <returns>Resultado de validación de la firma del archivo.</returns>
-        public static bool CheckFileSignature(FileStream source)
+        public static bool CheckFileSignature(FileStream source, bool dispose)
         {
             byte[] bytes = new byte[Constants.LOCKER_FILE_SIGNATURE_SIZE];
             source.Read(bytes, 0, Constants.LOCKER_FILE_SIGNATURE_SIZE);
+
+            if (dispose)
+                source.Dispose();
 
             return CheckFileSignature(bytes);
         }

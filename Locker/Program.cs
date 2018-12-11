@@ -1,18 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Console;
 using System.IO;
-using Locker.Crypto;
+using System.Linq;
+using static System.Console;
 
 namespace Locker
 {
     class Program
     {
-        private const string ARG_FIRST_ENCRYPT = "-e";
         private const string ARG_FIRST_DECRYPT = "-d";
+        private const string ARG_FIRST_ENCRYPT = "-e";
         private const string ARG_FIRST_HELP = "-?";
 
         /// <summary>
@@ -21,7 +17,6 @@ namespace Locker
         /// <param name="args">Argumentos de línea de comandos.</param>
         static void Main(string[] args)
         {
-            WriteTitle("Locker: Herramienta de cifrado de archivos");
             if (0 < args.Length) {
                 switch (args[0]) {
                     default:
@@ -29,10 +24,10 @@ namespace Locker
                         WriteHelp();
                         break;
                     case ARG_FIRST_DECRYPT:
-                        ModeDecrypt(args);
+                        OptionDecrypt(args.Skip(1).ToArray());
                         break;
                     case ARG_FIRST_ENCRYPT:
-                        ModeEncrypt(args);
+                        OptionEncrypt(args.Skip(1).ToArray());
                         break;
                 }
             } else WriteHelp();
@@ -42,61 +37,114 @@ namespace Locker
 #endif
         }
 
-        private static void OnProgressUpdate(ProgressChangedEventArgs e)
+        private static void OnProgressChanged(ProgressChangedEventArgs e)
         {
             if (e.Total < e.CurrentProgress)
                 e.CurrentProgress = e.Total;
 
-            Write($"\rProcesando archivo: {Math.Round((100.0 / e.Total) * e.CurrentProgress, 2)}% | {e.CurrentProgress}/{e.Total} bytes  ");
+            Write($"\rProcesando archivo... {Math.Round(100.0 / e.Total * e.CurrentProgress, 2)}% | {e.CurrentProgress}/{e.Total} bytes  ");
 
             if (e.CurrentProgress == e.Total)
                 WriteLine();
-
         }
 
-        static void ModeDecrypt(string[] args)
+        #region Modo: Desencriptar
+
+        static void OptionDecrypt(string[] args)
         {
-            string sourceFile = args[1];
-            string destinationFile = args[2];
+            if (args.Length < 1) {
+                WriteLine("Error: No se ha proporcionado un archivo de origen.");
+                return;
+            }
 
-            WriteLine("Se ha seleccionado el modo DESENCRIPTAR para el siguiente archivo:");
-            WriteFileOverview(sourceFile);
-            Write("Clave: ");
+            var sourceFile = new FileInfo(args[0]);
+            if (!sourceFile.Exists) {
+                WriteLine("Error: No se ha encontrado el archivo de origen especificado.");
+                return;
+            }
 
-            string key = RequestPassword();
-            WriteLine();
+            if (!LockerFile.CheckFileSignature(path: sourceFile.FullName, dispose: true)) {
+                WriteLine("Error: El archivo especificado está dañado o no tiene formato de archivo Locker.");
+                return;
+            }
 
-            var lockerFile = new LockerFile(new FileStream(sourceFile, FileMode.Open));
-            lockerFile.DecryptPayload(key, new FileStream(destinationFile, FileMode.Create), OnProgressUpdate);
+            FileStream destinationFile = null;
+            if (args.Length > 1)
+                destinationFile = new FileStream(args[1], FileMode.Create);
 
-            WriteLine("\nSe ha completado el desencriptado del archivo.");
+            try {
+                WriteLine("Se ha seleccionado el siguiente fichero para DESENCRIPTAR:");
+
+                var lf = new LockerFile(new FileStream(sourceFile.FullName, FileMode.Open));
+                var lfmeta = lf.Metadata;
+
+                WriteLine($"\n\tINFORMACIÓN DE ARCHIVO\n\tPaquete:\t{sourceFile.Name}\n\tIdentificador:\t{lfmeta.HashId}\n\tContenido:\t{lfmeta.FileName}\n\tTamaño:\t\t{lfmeta.FileLength} bytes\n\tCreación:\t{lfmeta.CreationDateTime}\n");
+
+                Write("Clave: ");
+                string key = RequestPassword();
+                WriteLine();
+
+                lf.DecryptPayload(key, null, OnProgressChanged);
+
+                WriteLine("\nSe ha desencriptado el archivo correctamente.");
+            } catch (LockerPayloadDecryptException) {
+                WriteLine("Error: La clave introducida es incorrecta.");
+            } catch (LockerFileFormatException) {
+                WriteLine("Error: El formato del archivo es incorrecto.");
+            } catch {
+                WriteLine("Ha ocurrido un error inesperado.");
+            }
         }
 
-        private static void ModeEncrypt(string[] args)
+        #endregion
+
+        #region Modo: Encriptar
+
+        private static void OptionEncrypt(string[] args)
         {
-            string sourceFile = args[1];
-            string destination = null;
+            if (args.Length < 1) {
+                WriteLine("Error: No se han proporcionado suficientes parámetros.");
+                return;
+            }
 
-            if (args.Length > 3)
-                destination = args[2];
+            var sourceFile = new FileInfo(args[0]);
+            if (!sourceFile.Exists) {
+                WriteLine("Error: No se ha encontrado el archivo de origen especificado.");
+                return;
+            }
 
-            WriteLine("Se ha seleccionado el modo ENCRIPTAR para el siguiente archivo:");
+            FileStream destinationFile = null;
+            if (args.Length > 1)
+                destinationFile = new FileStream(args[1], FileMode.Create);
+
+            WriteLine("Se ha seleccionado el siguiente archivo para ENCRIPTAR:");
             WriteFileOverview(sourceFile);
-            Write("Clave de cifrado: ");
+            var key = string.Empty;
 
-            string password = RequestPassword();
-            WriteLine();
+            while (true) {
+                Write("\rClave de cifrado: ");
+                key = RequestPassword();
+                if (key.Length < 1 || key.Length > 32)
+                    WriteLine("\rLa clave debe comprender entre 1 a 32 caracteres. Inténtelo de nuevo.");
+                else {
+                    WriteLine();
+                    break;
+                }
+            }
 
-            LockerFileFactory.CreateLockerFile(sourceFile, destination != null ? new FileStream(destination, FileMode.Create) : null, password, OnProgressUpdate);
+            LockerFileFactory.CreateLockerFile(sourceFile, destinationFile, key, OnProgressChanged);
 
-            WriteLine("\nSe ha completado el cifrado del archivo.");
+            WriteLine("El archivo se ha encriptado correctamente.");
         }
+
+        #endregion
 
         private static void WriteHelp()
         {
             Write("LOCKER: INSTRUCCIONES DE USO\n\nlocker [-?|-d|-e] \"<source>\" \"<destination>\"");
         }
 
+        #region Métodos auxiliares
 
         /// <summary>
         /// Solicita y oculta la escritura de una frase secreta.
@@ -138,11 +186,19 @@ namespace Locker
         /// <summary>
         /// Escribe información general del archivo seleccionado.
         /// </summary>
+        /// <param name="fileInfo">Información de archivo.</param>
+        static void WriteFileOverview(FileInfo fileInfo) => WriteFileOverview(fileInfo.FullName);
+
+        /// <summary>
+        /// Escribe información general del archivo seleccionado.
+        /// </summary>
         /// <param name="path">Ruta del archivo seleccionado.</param>
         static void WriteFileOverview(string path)
         {
             var fi = new FileInfo(path);
             WriteLine($"\n\tINFORMACIÓN DE ARCHIVO\n\tArchivo:\t{fi.Name}\n\tUbicación:\t{fi.Directory}\n\tTamaño:\t\t{fi.Length} bytes\n");
         }
+
+        #endregion
     }
 }
