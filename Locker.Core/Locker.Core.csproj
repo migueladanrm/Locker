@@ -47,6 +47,7 @@
     <Compile Include="Crypto\HashUtils.cs" />
     <Compile Include="LockerFile.cs" />
     <Compile Include="LockerFileFactory.cs" />
+    <Compile Include="LockerFileFormatException.cs" />
     <Compile Include="LockerFileMetadata.cs" />
     <Compile Include="NotifyProgressEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

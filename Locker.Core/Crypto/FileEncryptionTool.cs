@@ -2,9 +2,8 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
-using Locker.Crypto;
 
-namespace Locker
+namespace Locker.Crypto
 {
     /// <summary>
     /// Herramienta de encriptación de archivos.

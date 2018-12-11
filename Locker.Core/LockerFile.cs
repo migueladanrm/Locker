@@ -24,10 +24,10 @@ namespace Locker
         public LockerFile(FileStream source)
         {
             if (source.Length < Constants.LOCKER_FILE_HEADER_SIZE)
-                throw new Exception();
+                throw new LockerFileFormatException();
 
             if (!CheckFileSignature(source))
-                throw new Exception();
+                throw new LockerFileFormatException();
 
             var metadataBytes = new byte[Constants.LOCKER_FILE_METADATA_SIZE];
             source.Read(metadataBytes, 0, Constants.LOCKER_FILE_METADATA_SIZE);
@@ -47,10 +47,13 @@ namespace Locker
         /// </summary>
         public FileStream Payload => payload;
 
-        public void DecryptPayload(string key, FileStream destination, Action<NotifyProgressEventArgs> progressChangedListener = null)
+        public void DecryptPayload(string key, FileStream destination = null, Action<NotifyProgressEventArgs> progressChangedListener = null)
         {
             if (!metadata.HashId.Equals(GenerateLockerFileHashId(metadata, key)))
                 throw new Exception();
+
+            if (destination == null)
+                destination = new FileStream($@"{payload.Name.Substring(0, payload.Name.LastIndexOf('\\'))}\{metadata.FileName}", FileMode.Create);
 
             using (destination) {
                 var fet = new FileEncryptionTool(progressChangedListener);

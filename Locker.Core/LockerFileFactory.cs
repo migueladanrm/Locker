@@ -11,10 +11,15 @@ namespace Locker
 {
     public static class LockerFileFactory
     {
-        public static void CreateLockerFile(string sourceFile, FileStream destination, string key, Action<NotifyProgressEventArgs> progressChangedListener)
+        public static void CreateLockerFile(string sourceFile, string key, FileStream destination = null, Action<NotifyProgressEventArgs> progressChangedListener = null)
         {
+            var fi = new FileInfo(sourceFile);
+
+            if (destination == null)
+                destination = new FileStream($"{fi.Directory}\\{fi.Name.Replace(fi.Extension, Constants.LOCKER_FILE_EXT)}", FileMode.Create);
+
             WriteFileSignature(ref destination);
-            WriteMetadata(ref destination, CreateMetadata(new FileInfo(sourceFile), key));
+            WriteMetadata(ref destination, CreateMetadata(fi, key));
 
             using (var source = new FileStream(sourceFile, FileMode.Open))
             using (destination) {

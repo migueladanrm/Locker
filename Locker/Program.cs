@@ -75,7 +75,10 @@ namespace Locker
         private static void ModeEncrypt(string[] args)
         {
             string sourceFile = args[1];
-            string destination = args[2];
+            string destination = null;
+
+            if (args.Length > 3)
+                destination = args[2];
 
             WriteLine("Se ha seleccionado el modo ENCRIPTAR para el siguiente archivo:");
             WriteFileOverview(sourceFile);
@@ -84,7 +87,7 @@ namespace Locker
             string password = RequestPassword();
             WriteLine();
 
-            LockerFileFactory.CreateLockerFile(sourceFile, new FileStream(destination, FileMode.Create), password, OnProgressUpdate);
+            LockerFileFactory.CreateLockerFile(sourceFile, password, destination != null ? new FileStream(destination, FileMode.Create) : null, OnProgressUpdate);
 
             WriteLine("\nSe ha completado el cifrado del archivo.");
         }
