@@ -5,7 +5,11 @@
     /// </summary>
     public static class Constants
     {
+        /// <summary>
+        /// Extensión de archivo Locker.
+        /// </summary>
         public const string LOCKER_FILE_EXT = ".lkr";
+
         /// <summary>
         /// Tamaño de bytes de cabecera de archivo.
         /// </summary>

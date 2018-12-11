@@ -42,7 +42,7 @@ namespace Locker
 #endif
         }
 
-        private static void OnProgressUpdate(NotifyProgressEventArgs e)
+        private static void OnProgressUpdate(ProgressChangedEventArgs e)
         {
             if (e.Total < e.CurrentProgress)
                 e.CurrentProgress = e.Total;
@@ -87,7 +87,7 @@ namespace Locker
             string password = RequestPassword();
             WriteLine();
 
-            LockerFileFactory.CreateLockerFile(sourceFile, password, destination != null ? new FileStream(destination, FileMode.Create) : null, OnProgressUpdate);
+            LockerFileFactory.CreateLockerFile(sourceFile, destination != null ? new FileStream(destination, FileMode.Create) : null, password, OnProgressUpdate);
 
             WriteLine("\nSe ha completado el cifrado del archivo.");
         }

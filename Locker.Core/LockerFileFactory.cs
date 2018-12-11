@@ -1,17 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Locker.Crypto;
+using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
-using Locker.Crypto;
 
 namespace Locker
 {
+    /// <summary>
+    /// Herramienta de creación de ficheros cifrados.
+    /// </summary>
     public static class LockerFileFactory
     {
-        public static void CreateLockerFile(string sourceFile, string key, FileStream destination = null, Action<NotifyProgressEventArgs> progressChangedListener = null)
+        /// <summary>
+        /// Crea un fichero cifrado con una clave especificada.
+        /// </summary>
+        /// <param name="sourceFile">Ubicación del archivo de origen.</param>
+        /// <param name="destination">Fichero de destino.</param>
+        /// <param name="key">Clave de cifrado.</param>
+        /// <param name="progressChangedListener">Observador de evento de cambio de progreso.</param>
+        public static void CreateLockerFile(string sourceFile, FileStream destination, string key, Action<ProgressChangedEventArgs> progressChangedListener = null)
         {
             var fi = new FileInfo(sourceFile);
 
@@ -29,16 +35,37 @@ namespace Locker
         }
 
         /// <summary>
+        /// Crea los metadatos de archivo.
+        /// </summary>
+        /// <param name="file">Información del archivo original.</param>
+        /// <param name="key">Clave de cifrado utilizada para calcular el identificador hash.</param>
+        /// <returns>Metadatos de archivo.</returns>
+        private static LockerFileMetadata CreateMetadata(FileInfo file, string key)
+        {
+            var filename = file.Name;
+            var length = file.Length;
+            var creation = DateTime.Now;
+            var hashId = HashUtils.HashString($"{creation.ToString("o")}|{length}|{filename}", key);
+
+            return new LockerFileMetadata(hashId, filename, length, creation);
+        }
+
+        /// <summary>
         /// Escriba la firma de formato en el inicio del archivo.
         /// </summary>
         /// <param name="stream">Secuencia de archivo de destino.</param>
         private static void WriteFileSignature(ref FileStream stream)
         {
-            byte[] signature = new byte[16] { 0x4c, 0x4f, 0x43, 0x4b, 0x45, 0x52, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, };
+            var signature = new byte[Constants.LOCKER_FILE_SIGNATURE_SIZE] { 0x4C, 0x4F, 0x43, 0x4B, 0x45, 0x52, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, };
             for (int i = 0; i < signature.Length; i++)
                 stream.WriteByte(signature[i]);
         }
 
+        /// <summary>
+        /// Escribe los metadatos del archivo en la cabecera.
+        /// </summary>
+        /// <param name="stream">Secuencia de archivo de destino.</param>
+        /// <param name="metadata">Metadatos de archivo.</param>
         private static void WriteMetadata(ref FileStream stream, LockerFileMetadata metadata)
         {
             var ms = new MemoryStream();
@@ -51,17 +78,6 @@ namespace Locker
 
             while (stream.Length < Constants.LOCKER_FILE_HEADER_SIZE)
                 stream.WriteByte(0);
-        }
-
-
-        private static LockerFileMetadata CreateMetadata(FileInfo file, string key)
-        {
-            var filename = file.Name;
-            var length = file.Length;
-            var creation = DateTime.Now;
-            var hashId = HashUtils.HashString($"{creation.ToString("o")}|{length}|{filename}", key);
-
-            return new LockerFileMetadata(hashId, filename, length, creation);
         }
     }
 }

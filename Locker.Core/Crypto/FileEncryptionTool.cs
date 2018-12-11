@@ -13,14 +13,24 @@ namespace Locker.Crypto
     /// </remarks>
     public class FileEncryptionTool
     {
-        public event Action<NotifyProgressEventArgs> ProgressChanged;
+        /// <summary>
+        /// Se produce cuando se actualiza el progreso de la operación de encriptado o desencriptado en curso.
+        /// </summary>
+        public event Action<ProgressChangedEventArgs> ProgressChanged;
 
+        /// <summary>
+        /// Inicializa una instancia de <see cref="FileEncryptionTool"/>.
+        /// </summary>
         public FileEncryptionTool()
         {
 
         }
 
-        public FileEncryptionTool(Action<NotifyProgressEventArgs> progressChangedListener)
+        /// <summary>
+        /// Inicializa una instancia de <see cref="FileEncryptionTool"/>.
+        /// </summary>
+        /// <param name="progressChangedListener">Observador de evento de cambio de progreso.</param>
+        public FileEncryptionTool(Action<ProgressChangedEventArgs> progressChangedListener)
         {
             if (progressChangedListener != null)
                 ProgressChanged = progressChangedListener;
@@ -40,7 +50,6 @@ namespace Locker.Crypto
             source.Read(salt, 0, salt.Length);
 
             var key = new Rfc2898DeriveBytes(passwordBytes, salt, 50000);
-
             var aes = new RijndaelManaged {
                 KeySize = 256,
                 BlockSize = 128,
@@ -56,7 +65,7 @@ namespace Locker.Crypto
 
                 while ((read = cs.Read(buffer, 0, buffer.Length)) > 0) {
                     destination.Write(buffer, 0, read);
-                    ProgressChanged?.Invoke(new NotifyProgressEventArgs(destination.Length, source.Length));
+                    ProgressChanged?.Invoke(new ProgressChangedEventArgs(destination.Length, source.Length));
                 }
             }
 
@@ -93,7 +102,7 @@ namespace Locker.Crypto
 
                 while ((read = source.Read(buffer, 0, buffer.Length)) > 0) {
                     cs.Write(buffer, 0, read);
-                    ProgressChanged?.Invoke(new NotifyProgressEventArgs(destination.Length, source.Length));
+                    ProgressChanged?.Invoke(new ProgressChangedEventArgs(destination.Length, source.Length));
                 }
             }
 

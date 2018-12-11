@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Locker.Crypto;
+using System;
 using System.IO;
-using Locker.Crypto;
 
 namespace Locker
 {
@@ -16,17 +12,13 @@ namespace Locker
         private LockerFileMetadata metadata;
         private FileStream payload;
 
-        public LockerFile()
-        {
-
-        }
-
+        /// <summary>
+        /// Inicializa una instancia de <see cref="LockerFile"/>.
+        /// </summary>
+        /// <param name="source">Secuencia de archivo de origen.</param>
         public LockerFile(FileStream source)
         {
-            if (source.Length < Constants.LOCKER_FILE_HEADER_SIZE)
-                throw new LockerFileFormatException();
-
-            if (!CheckFileSignature(source))
+            if (source.Length < Constants.LOCKER_FILE_HEADER_SIZE || !CheckFileSignature(source))
                 throw new LockerFileFormatException();
 
             var metadataBytes = new byte[Constants.LOCKER_FILE_METADATA_SIZE];
@@ -47,10 +39,16 @@ namespace Locker
         /// </summary>
         public FileStream Payload => payload;
 
-        public void DecryptPayload(string key, FileStream destination = null, Action<NotifyProgressEventArgs> progressChangedListener = null)
+        /// <summary>
+        /// Crea una copia desencriptada del archivo.
+        /// </summary>
+        /// <param name="key">Clave de encriptado.</param>
+        /// <param name="destination">Destino de archivo.</param>
+        /// <param name="progressChangedListener">Observador de evento de cambio de progreso.</param>
+        public void DecryptPayload(string key, FileStream destination = null, Action<ProgressChangedEventArgs> progressChangedListener = null)
         {
             if (!metadata.HashId.Equals(GenerateLockerFileHashId(metadata, key)))
-                throw new Exception();
+                throw new LockerPayloadDecryptException();
 
             if (destination == null)
                 destination = new FileStream($@"{payload.Name.Substring(0, payload.Name.LastIndexOf('\\'))}\{metadata.FileName}", FileMode.Create);
@@ -59,11 +57,6 @@ namespace Locker
                 var fet = new FileEncryptionTool(progressChangedListener);
                 fet.DecryptFile(payload, destination, key);
             }
-        }
-
-        public static string GenerateLockerFileHashId(LockerFileMetadata metadata, string key)
-        {
-            return HashUtils.HashString($"{metadata.CreationDateTime.ToString("o")}|{metadata.FileLength}|{metadata.FileName}", key);
         }
 
         #region Métodos estáticos
@@ -75,7 +68,11 @@ namespace Locker
         /// <returns>Resultado de validación de firma del archivo.</returns>
         public static bool CheckFileSignature(string path) => CheckFileSignature(new FileStream(path, FileMode.Open));
 
-
+        /// <summary>
+        /// Verifica la firma del archivo-
+        /// </summary>
+        /// <param name="signature">Bytes de firma de archivo.</param>
+        /// <returns>Resultado de validación de firma de archivo.</returns>
         public static bool CheckFileSignature(byte[] signature)
         {
             if (signature == null)
@@ -84,9 +81,14 @@ namespace Locker
             if (signature.Length < Constants.LOCKER_FILE_SIGNATURE_SIZE)
                 throw new ArgumentException();
 
-            return signature[0] == 76 && signature[1] == 79 && signature[2] == 67 && signature[3] == 75 && signature[4] == 69 && signature[5] == 82;
+            return signature[0] == 0x4C && signature[1] == 0x4F && signature[2] == 0x43 && signature[3] == 0x4B && signature[4] == 0x45 && signature[5] == 0x69;
         }
 
+        /// <summary>
+        /// Verifica la firma del archivo.
+        /// </summary>
+        /// <param name="source">Secuencia de datos del archivo.</param>
+        /// <returns>Resultado de validación de la firma del archivo.</returns>
         public static bool CheckFileSignature(FileStream source)
         {
             byte[] bytes = new byte[Constants.LOCKER_FILE_SIGNATURE_SIZE];
@@ -94,6 +96,15 @@ namespace Locker
 
             return CheckFileSignature(bytes);
         }
+
+        /// <summary>
+        /// Genera un identificador hash de archivo a partir de los metadatos y una clave.
+        /// </summary>
+        /// <param name="metadata">Metadatos de archivo.</param>
+        /// <param name="key">Clave de encriptado.</param>
+        /// <returns>Identificador hash.</returns>
+        public static string GenerateLockerFileHashId(LockerFileMetadata metadata, string key)
+            => HashUtils.HashString($"{metadata.CreationDateTime.ToString("o")}|{metadata.FileLength}|{metadata.FileName}", key);
 
         #endregion
     }

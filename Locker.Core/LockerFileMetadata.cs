@@ -58,13 +58,13 @@ namespace Locker
         /// </summary>
         public DateTime CreationDateTime => creationDateTime;
 
-        public override string ToString()
-        {
-            return $"LockerFileMetadata: {hashId}|{fileName}|{fileLength}|{creationDateTime.ToString("o")}";
-        }
-
         #region Métodos estáticos
 
+        /// <summary>
+        /// Lee una instancia de metadatos a partir de un arreglo de bytes.
+        /// </summary>
+        /// <param name="bytes">Arreglo de bytes de origen.</param>
+        /// <returns>Metadatos de fichero.</returns>
         public static LockerFileMetadata ReadMetadata(byte[] bytes)
         {
             var ms = new MemoryStream(bytes);
