@@ -51,13 +51,13 @@ namespace Locker.Crypto
 
             var key = new Rfc2898DeriveBytes(passwordBytes, salt, 50000);
             var aes = new RijndaelManaged {
+                BlockSize = 256,
                 KeySize = 256,
-                BlockSize = 128,
+                Mode = CipherMode.CBC,
                 Padding = PaddingMode.PKCS7,
-                Mode = CipherMode.CFB
             };
-            aes.Key = key.GetBytes(aes.KeySize / 8);
             aes.IV = key.GetBytes(aes.BlockSize / 8);
+            aes.Key = key.GetBytes(aes.KeySize / 8);
 
             using (var cs = new CryptoStream(source, aes.CreateDecryptor(), CryptoStreamMode.Read)) {
                 var buffer = new byte[1024 * 1024];
@@ -86,13 +86,13 @@ namespace Locker.Crypto
             var passwordBytes = Encoding.UTF8.GetBytes(password);
             var key = new Rfc2898DeriveBytes(passwordBytes, salt, 50000);
             var aes = new RijndaelManaged {
+                BlockSize = 256,
                 KeySize = 256,
-                BlockSize = 128,
+                Mode = CipherMode.CBC,
                 Padding = PaddingMode.PKCS7,
-                Mode = CipherMode.CFB
             };
-            aes.Key = key.GetBytes(aes.KeySize / 8);
             aes.IV = key.GetBytes(aes.BlockSize / 8);
+            aes.Key = key.GetBytes(aes.KeySize / 8);
 
             destination.Write(salt, 0, salt.Length);
 
