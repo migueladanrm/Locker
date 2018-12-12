@@ -45,6 +45,8 @@
     <Compile Include="Crypto\CryptoUtils.cs" />
     <Compile Include="Crypto\FileEncryptionTool.cs" />
     <Compile Include="Crypto\HashUtils.cs" />
+    <Compile Include="FileWipeProgressChangedEventArgs.cs" />
+    <Compile Include="FileWipeTool.cs" />
     <Compile Include="LockerFile.cs" />
     <Compile Include="LockerFileFactory.cs" />
     <Compile Include="LockerFileFormatException.cs" />

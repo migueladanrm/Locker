@@ -82,7 +82,7 @@ namespace Locker.Crypto
         /// <param name="disposeSource">Determina si se liberará el flujo de origen al finalizar.</param>
         public void EncryptFile(Stream source, Stream destination, string password, bool disposeSource = true)
         {
-            var salt = CryptoUtils.GenerateRandomSalt(32, 10);
+            var salt = CryptoUtils.GenerateRandomBytes(32, 10);
             var passwordBytes = Encoding.UTF8.GetBytes(password);
             var key = new Rfc2898DeriveBytes(passwordBytes, salt, 50000);
             var aes = new RijndaelManaged {

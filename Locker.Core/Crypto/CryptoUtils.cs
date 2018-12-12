@@ -14,7 +14,7 @@ namespace Locker.Crypto
         /// <param name="size">Cantidad de bytes.</param>
         /// <param name="iterations">Número de iteraciones.</param>
         /// <returns>Bytes aleatorios generados.</returns>
-        public static byte[] GenerateRandomSalt(int size, int iterations = 1)
+        public static byte[] GenerateRandomBytes(long size, int iterations = 1)
         {
             if (0 >= size)
                 throw new ArgumentOutOfRangeException($"Parameter '{nameof(size)}' must be greater than 0.");
