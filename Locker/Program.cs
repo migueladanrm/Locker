@@ -9,6 +9,7 @@ namespace Locker
     {
         private const string ARG_FIRST_DECRYPT = "-d";
         private const string ARG_FIRST_ENCRYPT = "-e";
+        private const string ARG_FIRST_SDELETE = "-sd";
         private const string ARG_FIRST_HELP = "-?";
 
         /// <summary>
@@ -28,6 +29,9 @@ namespace Locker
                         break;
                     case ARG_FIRST_ENCRYPT:
                         OptionEncrypt(args.Skip(1).ToArray());
+                        break;
+                    case ARG_FIRST_SDELETE:
+                        OptionSecureDelete(args.Skip(1).ToArray());
                         break;
                 }
             } else WriteHelp();
@@ -138,6 +142,24 @@ namespace Locker
         }
 
         #endregion
+
+        static void OnFileWipeProgressChanged(FileWipeProgressChangedEventArgs e)
+        {
+            Write($"\rSobreescribiendo archivo... {e.CurrentIteration + 1}/{e.TotalIterations} iteraciones | {Math.Round(100.0 / e.FileLength * e.FileCurrentWriteLength, 2)}%   ");
+        }
+
+        static void OptionSecureDelete(string[] args)
+        {
+            var targetFile = args[0];
+            var iterations = int.Parse(args[2]);
+
+            WriteLine("Inicializando sobreescritura y eliminación de archivo...");
+
+            var fwt = new FileWipeTool(OnFileWipeProgressChanged);
+            fwt.WipeFile(targetFile, iterations);
+
+            WriteLine("\nEl archivo se ha eliminado de forma segura.");
+        }
 
         private static void WriteHelp()
         {
